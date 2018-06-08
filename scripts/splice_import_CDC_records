@@ -1,0 +1,60 @@
+#!/bin/bash
+
+. /home/oracle/gg/S3scripts/config.properties
+
+s3absolutepath="${BUCKET/s3:\/\//}"/
+# set up classpath to point to splice jars
+export CLASSPATH="${SPLICE_LIB_DIR}/*"
+
+echo $s3absolutepath
+
+IJ_SYS_ARGS="-Djdbc.drivers=com.splicemachine.db.jdbc.ClientDriver -Dij.connection.splice="${JDBCURL}
+
+java ${IJ_SYS_ARGS}  com.splicemachine.db.tools.ij <<EOF
+elapsedtime on;
+call SYSCS_UTIL.IMPORT_DATA ('${STAGINGSCHEMA}', '${STAGINGTABLE}', 
+'position,txindi,opcode,transtimestamp,targetschema,targettable,
+SHIPMENTID,
+ALERT,
+SHIPMODE,
+PRODUCT_DESCRIPTION,
+CONSIGNEE,
+SHIPPER,
+ARRIVAL_DATE,
+GROSS_WEIGHT_LB,
+GROSS_WEIGHT_KG,
+FOREIGN_PORT,
+US_PORT,
+VESSEL_NAME,
+COUNTRY_OF_ORIGIN,
+CONSIGNEE_ADDRESS,
+SHIPPER_ADDRESS,
+ZIPCODE,
+NO_OF_CONTAINERS,
+CONTAINER_NUMBER,
+CONTAINER_TYPE,
+QUANTITY,
+QUANTITY_UNIT,
+MEASUREMENT,
+MEASUREMENT_UNIT,
+BILL_OF_LADING,
+HOUSE_VS_MASTER,
+DISTRIBUTION_PORT,
+MASTER_BL,
+VOYAGE_NUMBER,
+SEAL,
+SHIP_REGISTERED_IN,
+INBOND_ENTRY_TYPE,
+CARRIER_CODE,
+CARRIER_NAME,
+CARRIER_CITY,
+CARRIER_STATE,
+CARRIER_ZIP,
+CARRIER_ADDRESS,
+NOTIFY_PARTY,
+NOTIFY_ADDRESS,
+PLACE_OF_RECEIPT,
+DATE_OF_RECEIPT',
+'s3a://<AWS_ACCESS_KEY>:<AWS_SECRET_KEY>@${s3absolutepath}', '|', '"', 'yyyy-MM-dd HH:mm:ss.SSSSSS', 'yyyy-MM-dd', null, -1, 's3a://<AWS_ACCESS_KEY>:<AWS_SECRET_KEY>@brandon-splice/testCDC/import/BAD/', true, null);
+exit;
+EOF

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+. /home/oracle/gg/S3scripts/config.properties
+
+timestamp=$1
+# set up classpath to point to splice jars
+export CLASSPATH="${SPLICE_LIB_DIR}/*"
+
+IJ_SYS_ARGS="-Djdbc.drivers=com.splicemachine.db.jdbc.ClientDriver -Dij.connection.splice="${JDBCURL}
+
+java ${IJ_SYS_ARGS}  com.splicemachine.db.tools.ij <<EOF
+elapsedtime on;
+call SPLICE.ORACLE_CDC('${STAGINGSCHEMA}','${STAGINGTABLE}','${TARGETSCHEMA}','${TARGETTABLE}', '${timestamp}','${JDBCURL}');
+exit;
+EOF

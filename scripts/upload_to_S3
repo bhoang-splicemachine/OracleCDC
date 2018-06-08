@@ -1,0 +1,39 @@
+#!/bin/bash
+
+. /home/oracle/gg/S3scripts/config.properties
+touch $LIST
+
+# use s3cmd to print a list of existing folders in bucket
+errormessages=$(ls -ltr $TARGETDIR/$TARGETFILES > $LIST 2> /dev/null ) 
+
+if ! [[ -s $LIST ]]
+then
+  echo "There are no CDC files from Oracle to be processed..."
+  exit 1 
+fi
+
+count=0
+# check if folders in $BKUP_PATH exist in s3, if not then copy them there
+for DSVfile in `cat $LIST |awk '{print $9}'` ; do
+    if [ -f "$DSVfile" ]
+    then
+	echo "$DSVfile found...Copying to ${BUCKET}"
+	${AWSCLI} ${AWSCLI_COPY_OPTS} ${DSVfile} ${BUCKET}/
+	let count++
+    else
+	echo "$file not found."
+    fi
+done
+
+echo "COUNT: " $count
+echo "Number of files to be archived: " $count
+if [ $count -gt 0 ] 
+then
+  sleep 5
+  for copiedfiles in `${AWSCLI} ${AWSCLI_LIST_OPTS} ${BUCKET}/ | awk '{ print $4}'` ; do
+      echo "Moving $copiedfiles to $PROCESSEDDIR.."
+      mv $TARGETDIR/$copiedfiles $PROCESSEDDIR
+  done
+fi
+# delete temporary files
+rm -rf $LIST

@@ -1,0 +1,20 @@
+
+-- To setup extract as a pump to read the trail and output flat-files
+--   ggsci> add extract ffue, extTrailSource dirdat/tc
+--   ggsci> info ffue
+
+
+Extract ffue
+
+CUserExit flatfilewriter.so CUSEREXIT PassThru IncludeUpdateBefores, PARAMS "dirprm/ffue.properties"
+-- CUserExit flatfilewriter.dll CUSEREXIT PassThru IncludeUpdateBefores, PARAMS "dirprm/ffue.properties"
+
+--SourceDefs dirdef/ggtest.def
+
+-- Table gg.employees;
+-- Table gg.job_history;
+-- Table gg.*;
+LOGALLSUPCOLS
+--SOURCECATALOG APLL 
+TABLE SEECHANG.SHIPMENT_IN_TRANSIT;
+

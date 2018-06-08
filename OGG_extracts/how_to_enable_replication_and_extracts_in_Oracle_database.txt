@@ -1,0 +1,50 @@
+----------------
+### How to enable supplemental logging and golden gate replication properties in database
+----------------
+
+[oracle@stl-colo-srv068 gg]$ sqlplus / as sysdba
+
+SQL> ALTER DATABASE ADD SUPPLEMENTAL LOG DATA;
+SQL> ALTER DATABASE FORCE LOGGING;
+SQL> ALTER SYSTEM SWITCH LOGFILE;
+SQL> SHUTDOWN IMMEDIATE;
+SQL> STARTUP MOUNT;
+SQL> ALTER DATABASE ARCHIVELOG;
+SQL> ALTER DATABASE OPEN;
+SQL> ALTER SYSTEM SET ENABLE_GOLDENGATE_REPLICATION=TRUE;
+
+----------------
+### How to configure extract, pump and flat-file writer
+----------------
+
+./ggsci
+
+GGSCI (stl-colo-srv068.splicemachine.colo) 1> DBLOGIN USERID system@ggtest password oracle
+Successfully logged into database GGTEST.
+
+GGSCI (stl-colo-srv068.splicemachine.colo as system@orcl/GGTEST) 2> ADD SCHEMATRANDATA GGTEST ALLCOLS
+GGSCI (stl-colo-srv068.splicemachine.colo as system@orcl/GGTEST) 8> DBLOGIN USERID SYSTEM PASSWORD oracle
+GGSCI (stl-colo-srv068.splicemachine.colo as SYSTEM@orcl/CDB$ROOT) 10> REGISTER EXTRACT EXTSHIP DATABASE CONTAINER (ggtest)
+GGSCI (stl-colo-srv068.splicemachine.colo as SYSTEM@orcl/CDB$ROOT) 12> ADD SCHEMATRANDATA GGTEST.GGTEST
+GGSCI (stl-colo-srv068.splicemachine.colo as SYSTEM@orcl/CDB$ROOT) 13> ADD EXTRACT EXTSHIP, INTEGRATED TRANLOG, BEGIN NOW
+GGSCI (stl-colo-srv068.splicemachine.colo as SYSTEM@orcl/CDB$ROOT) 14> ADD EXTTRAIL ./dirdat/shipment/lt EXTRACT EXTSHIP
+GGSCI (stl-colo-srv068.splicemachine.colo as SYSTEM@orcl/CDB$ROOT) 16> start EXTSHIP
+GGSCI (stl-colo-srv068.splicemachine.colo as SYSTEM@orcl/CDB$ROOT) 19> ADD EXTRACT EXDPSHIP EXTTRAILSOURCE ./dirdat/shipment/lt BEGIN NOW
+GGSCI (stl-colo-srv068.splicemachine.colo) 7> ADD RMTTRAIL ./dirdat/rt/shipment/rt EXTRACT EXDPSHIP
+GGSCI (stl-colo-srv068.splicemachine.colo as SYSTEM@orcl/CDB$ROOT) 20> ADD EXTRACT FFUE, EXTTRAILSOURCE ./dirdat/shipment/lt
+GGSCI (stl-colo-srv068.splicemachine.colo as SYSTEM@orcl/CDB$ROOT) 21> start EXDPSHIP
+GGSCI (stl-colo-srv068.splicemachine.colo as SYSTEM@orcl/CDB$ROOT) 21> start FFUE
+
+----------------------
+### The below commands are required only if we want to remove extract services
+----------------------
+./ggsci
+
+GGSCI (stl-colo-srv068.splicemachine.colo) 1> DBLOGIN USERID system@ggtest password oracle
+GGSCI (stl-colo-srv068.splicemachine.colo as system@orcl/GGTEST) 2> DELETE SCHEMATRANDATA GGTEST.GGTEST ALLCOLS
+GGSCI (stl-colo-srv068.splicemachine.colo as system@orcl/GGTEST) 3> DELETE TRANDATA GGTEST.GGTEST.SHIPMENT ALLCOLS
+GGSCI (stl-colo-srv068.splicemachine.colo as system@orcl/GGTEST) 10> DELETE EXTRACT EXTSHIP DATABASE
+GGSCI (stl-colo-srv068.splicemachine.colo as system@orcl/GGTEST) 11> DELETE EXTRACT EXDPSHIP DATABASE
+GGSCI (stl-colo-srv068.splicemachine.colo as SYSTEM@orcl/CDB$ROOT) 17> DELETE EXTRACT FFUE
+GGSCI (stl-colo-srv068.splicemachine.colo as system@orcl/GGTEST) 14> DBLOGIN USERID SYSTEM PASSWORD oracle
+GGSCI (stl-colo-srv068.splicemachine.colo as SYSTEM@orcl/CDB$ROOT) 15> UNREGISTER EXTRACT EXTSHIP DATABASE
